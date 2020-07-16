@@ -2,9 +2,15 @@
 PROJECT := sorting-algorithms-d3
 EMP_DIR := third-party/Empirical/source
 
+
+# working web compilation command:
+# emcc -Wall -Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -Wno-dollar-in-identifier-extension -std=c++17 -Ithird-party/Empirical/source/  -pedantic -Wno-dollar-in-identifier-extension -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]' -s TOTAL_MEMORY=67108864 --js-library third-party/Empirical/source/web/library_emp.js --js-library third-party/Empirical/source/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 -s WASM=0  source/web/sorting-algorithms-d3-web.cc -o web/sorting-algorithms-d3.js
+
 # Flags to use regardless of compiler
-CFLAGS_all := -Wall -Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -Wno-dollar-in-identifier-extension -std=c++17 -I$(EMP_DIR)/
-#CFLAGS_all := -Wall -Wno-unused-function -std=c++17 -I$(EMP_DIR)/
+# new:
+# CFLAGS_all := -Wall -Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -Wno-dollar-in-identifier-extension -std=c++17 -I$(EMP_DIR)/
+# original:
+CFLAGS_all := -Wall -Wno-unused-function -std=c++17 -I$(EMP_DIR)/
 
 # Native compiler information
 CXX_nat := g++
@@ -13,9 +19,12 @@ CFLAGS_nat_debug := -g $(CFLAGS_all)
 
 # Emscripten compiler information
 CXX_web := emcc
-OFLAGS_web_all := -pedantic -Wno-dollar-in-identifier-extension -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]' -s TOTAL_MEMORY=67108864 --js-library $(EMP_DIR)/web/library_emp.js --js-library $(EMP_DIR)/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 -s WASM=0 #--embed-file configs
-# OFLAGS_web_all := -s "EXTRA_EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']" -s TOTAL_MEMORY=67108864 --js-library $(EMP_DIR)/web/library_emp.js --js-library $(EMP_DIR)/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 #--embed-file configs
-#OFLAGS_web := -Oz -DNDEBUG
+# new:
+# OFLAGS_web_all := -pedantic -Wno-dollar-in-identifier-extension -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "stringToUTF8"]' -s TOTAL_MEMORY=67108864 --js-library $(EMP_DIR)/web/library_emp.js --js-library $(EMP_DIR)/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 -s WASM=0 #--embed-file configs
+# original:
+OFLAGS_web_all := -s "EXTRA_EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']" -s TOTAL_MEMORY=67108864 --js-library $(EMP_DIR)/web/library_emp.js --js-library $(EMP_DIR)/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 #--embed-file configs
+OFLAGS_web := -Oz -DNDEBUG
+# end original
 OFLAGS_web_debug := -g4 -Oz -Wno-dollar-in-identifier-extension
 
 CFLAGS_web := $(CFLAGS_all) $(OFLAGS_web) $(OFLAGS_web_all)
