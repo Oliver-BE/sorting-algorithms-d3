@@ -19,11 +19,13 @@
 #include "web/d3/scales.h"
 #include "web/d3/utils.h"
 
-namespace UI = emp::web;
-UI::Document div_d3viz("emp_d3");
-UI::Document div_d3viz_wrapper("emp_d3_wrapper");
+// namespace UI = emp::web;
+emp::web::Document div_d3viz("emp_d3");
+emp::web::Document div_d3viz_wrapper("emp_d3_wrapper");
 
 void CreateD3Viz() {
+
+  // div_d3viz.Freeze();
 
   EM_ASM({
     // set the dimensions and margins of the graph
