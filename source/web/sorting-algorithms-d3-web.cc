@@ -74,7 +74,7 @@ void CreateD3Viz() {
 
 void CreateD3Viz2() {
 
-  int margin = 30;
+  // int margin = 30;
   int width = 450;
   int height = 400;
 
@@ -110,7 +110,7 @@ void CreateD3Viz2() {
 
   D3::LinearScale test;
   test.SetDomain(0, 1000).SetRange(0, 500);
-  int result = test.ApplyScaleInt(500);
+  int result = test.ApplyScale<int>(500);
 
   std::cout << result << std::endl;
 }
@@ -120,7 +120,7 @@ void CreateTestDiv() {
     $("body").append('<div id="body_emp_test_container"></div>');
   });
 
-  int margin = 30;
+  // int margin = 30;
   int width = 450;
   int height = 400;
 
