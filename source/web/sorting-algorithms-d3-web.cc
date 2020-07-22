@@ -17,11 +17,7 @@
 #include "web/d3/selection.h"
 #include "web/d3/transition.h"
 #include "web/d3/scales.h"
-#include "web/d3/utils.h"
-
-// namespace UI = emp::web;
-emp::web::Document div_d3viz("emp_d3");
-emp::web::Document div_d3viz_wrapper("emp_d3_wrapper");
+#include "web/d3/utils.h" 
 
 void CreateD3Viz() {
 
@@ -149,8 +145,6 @@ void CreateTestDiv() {
 }
 
 int main() {
-  D3::internal::get_emp_d3();
-
   CreateD3Viz();
   CreateD3Viz2();
   CreateTestDiv();
