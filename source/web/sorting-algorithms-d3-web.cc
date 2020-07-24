@@ -3,8 +3,10 @@
 //  Released under MIT license; see LICENSE
 
 #include <iostream>
-#include <vector>
 #include <string>
+#include <algorithm>
+#include <random>  
+#include <chrono> 
 
 #include "web/init.h"
 #include "web/web.h"
@@ -17,137 +19,174 @@
 #include "web/d3/selection.h"
 #include "web/d3/transition.h"
 #include "web/d3/scales.h"
+#include "web/d3/axis.h"
 #include "web/d3/utils.h" 
 
-void CreateD3Viz() {
 
-  // div_d3viz.Freeze();
+struct BarPlot {
+  ///////////////////////////////
+  //     MEMBER VARIABLES      //
+  ///////////////////////////////
+  // margin and height
+  emp::map<std::string, int> margin = {{"top", 50}, {"right", 25}, {"bottom", 90}, {"left", 100}};
+  int width = 0;
+  int height = 0;
 
-  EM_ASM({
-    // set the dimensions and margins of the graph
-    var margin = 30;
-    var width = 450;
-    var height = 400;
+  // D3 selections / scales / axis
+  D3::Selection svg;
+  D3::Selection bar;
+  D3::BandScale xScale;
+  D3::LinearScale yScale;
+  D3::Axis<D3::BandScale> xAxis = D3::Axis<D3::BandScale>("bottom", "Bottom Axis", 0);
+  D3::Selection xAxisSel;
+  D3::Axis<D3::LinearScale> yAxis = D3::Axis<D3::LinearScale>("left", "Left Axis", 0);
+  D3::Selection yAxisSel;
 
-    var svg = d3.select("#emp_d3")
-                  .append("svg")
-                  .attr("width", width)
-                  .attr("height", height);
-
-    // Create data
-    var data = ([ {x : 10, y : 20}, {x : 40, y : 90}, {x : 80, y : 50} ]);
-
-    // X scale and Axis
-    var x = d3.scaleLinear()
-                .domain([ 0, 100 ])
-                .range([ margin, width - margin ]);
-
-    svg.append('g')
-        .attr("transform", "translate(0," + (height - margin) + ")")
-        .call(d3.axisBottom(x));
-
-    // X scale and Axis
-    var y = d3.scaleLinear()
-                .domain([ 0, 100 ])
-                .range([ height - margin, margin ]);
-
-    svg.append('g')
-        .attr("transform", "translate(" + margin + ",0)")
-        .call(d3.axisLeft(y));
-
-    // Add 3 dots for 0, 50 and 100%
-    svg.selectAll("circle")
-        .data(data)
-        .enter()
-        .append("circle")
-        .attr("cx", function(d){return x(d.x)})
-        .attr("cy", function(d){return y(d.y)})
-        .attr("r", 7);
-
-    console.log("in macro");
-  });
-}
-
-void CreateD3Viz2() {
-
-  // int margin = 30;
-  int width = 450;
-  int height = 400;
-
-  D3::Selection svg = D3::Select("#emp_d3_wrapper")
-                          .Append("svg")
-                          .SetAttr("width", width)
-                          .SetAttr("height", height);
-  
-  emp::vector<int> data = {10, 100, 300, 234, 53};
+  // data and functions for data values
+  emp::array<int, 25> data;
   std::function<int(int, int, int)> return_d =
       [](int d, int i, int j) { return d; };
+  // a way to cheat and sort the array
+  std::function<void()> SortArrayRedraw =
+      [this]() { 
+        for (int i = 0; i < data.size(); i++) { data[i] = i + 1; } 
+        Redraw();    
+      };
+  size_t sort_arr_id;
 
-  svg.SelectAll("circle")
-      .Data(data)
-      .EnterAppend("circle")
-      .SetAttr("fill", "blue")
-      .SetAttr("cx", 100)
-      .SetAttr("cy", 200)
-      .SetAttr("r", 1)
-      .MakeTransition()
-      .SetDuration(2000)
-      .SetAttr("cx", return_d)
-      .SetAttr("cy", return_d)
-      .SetAttr("r", 7)
-      .SetAttr("fill", "red");
+  // shuffle the array
+  std::function<void()> ShuffleArrayRedraw =
+      [this]() {
+        ShuffleArray(data);
+        Redraw();
+      };
+  size_t shuffle_arr_id;
 
-  // EM_ASM({
-  //   $("body").append('<div id="body_emp_test_container"></div>')
-  // });
-  // D3::Selection svg = D3::Select("#emp_base").Append("svg");
 
-  // D3::Selection test_select = D3::Select("#test_test").Append("svg").SetAttr("width", 400).SetAttr("height", 400);
+  ///////////////////////////////
+  //        CONSTRUCTORS       //
+  ///////////////////////////////
+  BarPlot() {
+    // init data and shuffle it
+    for (int i = 0; i < data.size(); i++) { 
+      data[i] = i + 1;
+    }
+    ShuffleArray(data);
 
-  D3::LinearScale test;
-  test.SetDomain(0, 1000).SetRange(0, 500);
-  int result = test.ApplyScale<int>(500);
+    // on window resize, redraw everything
+    emp::web::OnDocumentReady([this]() {
+      emp::OnResize([this]() {
+        Redraw();
+      });
+    });
 
-  std::cout << result << std::endl;
-}
+    // create button functions
+    sort_arr_id = emp::JSWrap(SortArrayRedraw, "SortArrayRedraw"); 
+    sort_arr_id = emp::JSWrap(ShuffleArrayRedraw, "ShuffleArrayRedraw"); 
+  }
 
-void CreateTestDiv() {
-  EM_ASM({
-    $("body").append('<div id="body_emp_test_container"></div>');
-  });
+  ~BarPlot() {
+    // cleanup button functions  
+    emp::JSDelete(sort_arr_id);  
+    emp::JSDelete(shuffle_arr_id); 
+  }
 
-  // int margin = 30;
-  int width = 450;
-  int height = 400;
 
-  D3::Selection svg = D3::Select("#body_emp_test_container")
-                          .Append("svg")
-                          .SetAttr("width", width)
-                          .SetAttr("height", height);
-  
-  emp::vector<int> data = {10, 100, 300, 234, 53};
-  std::function<int(int, int, int)> return_d =
-      [](int d, int i, int j) { return d; };
+  ///////////////////////////////
+  //       MAIN FUNCTIONS      //
+  ///////////////////////////////
+  /// Initializes the general HTML layout, scales, and axes
+  void Init() {
+    // init height and width (based on parent div width)
+    width = GetParentWidth() - margin["right"] - margin["left"];
+    height = 500 - margin["top"] - margin["bottom"];
+    
+    // initialize svg object with proper dimensions
+    svg = D3::Select("#emp_d3_wrapper")
+              .Append("svg")
+              .SetAttr("id", "barplot")
+              .SetAttr("width", width + margin["right"] + margin["left"])
+              .SetAttr("height", height + margin["top"] + margin["bottom"])
+              .Move(margin["left"], margin["top"]);
 
-  svg.SelectAll("circle")
-      .Data(data)
-      .EnterAppend("circle")
-      .SetAttr("fill", "blue")
-      .SetAttr("cx", 100)
-      .SetAttr("cy", 200)
-      .SetAttr("r", 1)
-      .MakeTransition()
-      .SetDuration(2000)
-      .SetAttr("cx", return_d)
-      .SetAttr("cy", return_d)
-      .SetAttr("r", 7)
-      .SetAttr("fill", "red");
-}
+    // initialize barplot selection
+    bar = svg.Append("g")
+             .SetAttr("id", "bars"); 
+
+    // initialize scales
+    xScale.SetDomain(data)
+          .SetRange(0, width);
+    xScale.SetPadding(0.1);
+
+    yScale.SetDomain(0, data.size())
+          .SetRange(height, 0);
+
+    // init axis
+    xAxisSel = svg.Append("g")
+                   .SetAttr("id", "x-axis")
+                   .Move(0, height);
+
+    yAxisSel = svg.Append("g")
+                  .SetAttr("id", "y-axis");
+
+    xAxis.SetScale(xScale);
+    yAxis.SetScale(yScale);
+  }
+
+  /// Draws all the necessary components for the viz
+  void DrawViz() {
+    // draw axes
+    xAxis.Draw(xAxisSel);
+    yAxis.Draw(yAxisSel);
+
+    // draw bars
+    bar.SelectAll("rect")
+        .Data(data)
+        .EnterAppend("rect")
+        .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(return_d(d, i, j)); })
+        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(return_d(d, i, j)); })
+        .SetAttr("width", xScale.GetBandwidth())
+        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(return_d(d, i, j)); })
+        .SetAttr("fill", "#69b3a2");
+  }
+
+  /// Initializes everything and then draws it
+  void RunApp() {
+    Init();
+    DrawViz();
+  }
+
+
+  ///////////////////////////////
+  //     HELPER FUNCTIONS     //
+  ///////////////////////////////
+  void ClearBarPlot() {
+    EM_ASM({
+      d3.select("#emp_d3_wrapper")
+        .select("#barplot")
+        .remove();
+    });
+  }
+
+  void Redraw() {
+    ClearBarPlot();
+    RunApp();
+  }
+
+  double GetParentWidth() { 
+    return EM_ASM_DOUBLE({ return $("#emp_d3_wrapper").width(); }); 
+  }
+
+  void ShuffleArray(emp::array<int, 25> & arr) {
+    // obtain a time-based seed:
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    
+    std::shuffle(arr.begin(), arr.end(), std::default_random_engine(seed)); 
+  }
+};
+
+BarPlot test{};
 
 int main() {
-  CreateD3Viz();
-  CreateD3Viz2();
-  CreateTestDiv();
-
-  std::cout << "Hello, console!" << std::endl;
+  test.RunApp();  
 }
