@@ -27,6 +27,7 @@
 // levenshtein distance (steps to finish graphic)
 // some distribution graphic
 // add info button / link to blogpost
+// add set delay in transition.h
 
 // slidey bar to go through steps
 // keep track of each step in an array of arrays (each index holds one iteration of sorting alg)
@@ -45,7 +46,7 @@ struct BarPlot {
   emp::map<std::string, int> margin = {{"top", 25}, {"right", 25}, {"bottom", 25}, {"left", 25}};
   int width = 0;
   int height = 0;
-  std::string barColor = "#ff974d";
+  std::string barColor = "#fc9723";
 
   // D3 selections / scales / axis
   D3::Selection svg;
@@ -75,7 +76,7 @@ struct BarPlot {
   std::function<void()> ShuffleArrayButton =
       [this]() {
         ShuffleArray(data);
-        barColor = "#ff974d";
+        barColor = "#fc9723";
         UpdateViz();
       };
   size_t shuffle_id;
