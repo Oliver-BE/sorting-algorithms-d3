@@ -38,7 +38,7 @@ struct BarPlot {
   //     MEMBER VARIABLES      //
   ///////////////////////////////
   // basic barplot layout vars
-  emp::map<std::string, int> margin = {{"top", 25}, {"right", 50}, {"bottom", 50}, {"left", 50}};
+  emp::map<std::string, int> margin = {{"top", 25}, {"right", 25}, {"bottom", 25}, {"left", 25}};
   int width = 0;
   int height = 0;
   std::string barColor = "#69b3a2";
@@ -95,7 +95,7 @@ struct BarPlot {
 
     // create button functions
     bubble_sort_id = emp::JSWrap(BubbleSortButton, "BubbleSortButton"); 
-    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");  
+    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");
   }
 
   ~BarPlot() {
@@ -112,7 +112,7 @@ struct BarPlot {
   void Init() {
     // init height and width (based on parent div width)
     width = GetParentWidth() - margin["right"] - margin["left"];
-    height = 500 - margin["top"] - margin["bottom"];
+    height = 450 - margin["top"] - margin["bottom"];
 
     // initialize svg object with proper dimensions
     svg = D3::Select("#emp_d3_wrapper")
@@ -136,11 +136,12 @@ struct BarPlot {
 
     // initialize and draw x axis
     xAxisSel = barplot.Append("g")
-                      .SetAttr("id", "x-axis");
+                      .SetAttr("id", "x-axis")
+                      .Move(0, height);
 
-    xAxis = D3::Axis<D3::BandScale>("bottom", "", -height)
+    xAxis = D3::Axis<D3::BandScale>("bottom", "", 0)
               .SetScale(xScale)
-              .Draw(xAxisSel);
+              .Draw(xAxisSel); 
 
     // initialize and draw bars
     bars = barplot.Append("g")
@@ -165,7 +166,7 @@ struct BarPlot {
   void ResizeUpdate() {
     // update the SVG if the window has changed size 
     width = GetParentWidth() - margin["right"] - margin["left"];
-    height = 500 - margin["top"] - margin["bottom"];
+    height = 450 - margin["top"] - margin["bottom"];
 
     svg.SetAttr("width", width + margin["right"] + margin["left"])
        .SetAttr("height", height + margin["top"] + margin["bottom"]);

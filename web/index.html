@@ -4,9 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0 shrink-to-fit=no">
-    <title>Sorting Algorithms D3</title>
+    <title>Sorting Algs D3</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css"
         integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <!-- Font Awesome icons -->
+    <script src="https://kit.fontawesome.com/0b8aa1ceb1.js" crossorigin="anonymous"></script>
+    <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
@@ -30,28 +33,43 @@
     </svg>
 
     <!-- Page header -->
-    <div class="jumbotron" style="padding-top: 2rem; padding-bottom: 1rem; margin-bottom: 0">
-        <h1 class="display-4">Sorting Algorithms D3</h1>
-        <p class="lead">source: <a
-                href="https://github.com/Oliver-BE/sorting-algorithms-d3">github.com/Oliver-BE/sorting-algorithms-d3</a>
+    <div class="jumbotron pb-1 pt-4 rounded-0">
+        <h1 class="display-4">Visualizing Sorting Algorithms with D3</h1>
+        <p class="lead">Using <a href="https://github.com/devosoft/Empirical">Empirical's</a> D3-wrapper
         </p>
     </div>
 
-    <!-- D3 Code -->
-    <div class="row" style="padding: 20px;">
-        <!-- Using the wrapper -->
-        <div class="col-s-12 col-md-10">
-            <div class="card">
-                <h5 class="card-header"> Sort me! </h5>
-                <!-- Here is where C++ code comes in -->
-                <div id="emp_d3_wrapper"></div>
+    <!-- Main content -->
+    <div class="container-fluid">
+        <!-- Row 1 -->
+        <div class="row mb-2">
+            <div class="col">
+                <div class="card">
+                    <!-- Card heading -->
+                    <h5 class="card-header"><i class="fas fa-question-circle"></i> What is this? </h5>
+                </div>
             </div>
         </div>
-        <div class="col-s-12 col-md-2">
-            <div class="card">
-                <h5 class="card-header"> Buttons! </h5>
-                <button onclick="emp.BubbleSortButton()">Bubble Sort</button>
-                <button onclick="emp.ShuffleArrayButton()">Shuffle</button>
+
+        <!-- Row 2 -->
+        <div class="row mb-2">
+            <!-- Using the wrapper -->
+            <div class="col-s-12 col-md-9">
+                <div class="card">
+                    <h5 class="card-header"><i class="fas fa-chart-bar"></i> Sort me! </h5>
+                    <!-- Here is where C++ code comes in -->
+                    <div id="emp_d3_wrapper"></div>
+                </div>
+            </div>
+            <div class="col-s-12 col-md-3">
+                <div class="card p-2">
+                    <h5 class="card-header"><i class="fas fa-cog"></i> Buttons! </h5>
+                    <button type="button" class="btn btn-primary btn-lg btn-block" style="margin-top: 10px;"
+                        onclick="emp.BubbleSortButton()">Bubble
+                        Sort</button>
+                    <button type="button" class="btn btn-dark btn-lg btn-block" style="margin-bottom: 10px;"
+                        onclick="emp.ShuffleArrayButton()">Shuffle</button>
+                </div>
             </div>
         </div>
     </div>
