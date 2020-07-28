@@ -30,7 +30,7 @@
     </svg>
 
     <!-- Page header -->
-    <div class="jumbotron" style="padding-top: 2rem; padding-bottom: 1rem">
+    <div class="jumbotron" style="padding-top: 2rem; padding-bottom: 1rem; margin-bottom: 0">
         <h1 class="display-4">Sorting Algorithms D3</h1>
         <p class="lead">source: <a
                 href="https://github.com/Oliver-BE/sorting-algorithms-d3">github.com/Oliver-BE/sorting-algorithms-d3</a>
@@ -38,15 +38,15 @@
     </div>
 
     <!-- Buttons -->
-    <button onclick="emp.SortArrayRedraw()">Sort Array</button>
-    <button onclick="emp.ShuffleArrayRedraw()">Shuffle Array</button>
+    <button onclick="emp.BubbleSortButton()">Bubble Sort</button>
+    <button onclick="emp.ShuffleArrayButton()">Shuffle Array</button>
 
     <!-- D3 divs -->
     <div class="row" style="padding: 20px;">
         <!-- Using the wrapper -->
         <div class="col-s-12 col-md-12">
             <div class="card">
-                <h5 class="card-header"> D3 Div Using Wrapper! </h5>
+                <h5 class="card-header"> Sort me! </h5>
                 <!-- Here is where C++ code comes in -->
                 <div id="emp_d3_wrapper"></div>
             </div>

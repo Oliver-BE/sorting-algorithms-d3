@@ -13,6 +13,7 @@
 #include "web/Document.h"
 
 #include "web/js_utils.h"
+#include "base/array.h"
 #include "base/map.h"
 
 #include "web/d3/d3_init.h"
@@ -22,45 +23,55 @@
 #include "web/d3/axis.h"
 #include "web/d3/utils.h" 
 
+// have an update function that will update everything based on new data
+// in the sorting algorithm, after every step / swap, call that update function and/or redraw everything with the new data
+// levenshtein distance (steps to finish graphic)
+// some distribution graphic
+// nice panel to hold buttons
+
+// slidey bar to go through steps
 
 struct BarPlot {
   ///////////////////////////////
   //     MEMBER VARIABLES      //
   ///////////////////////////////
-  // margin and height
-  emp::map<std::string, int> margin = {{"top", 50}, {"right", 25}, {"bottom", 90}, {"left", 100}};
+  // basic barplot layout vars
+  emp::map<std::string, int> margin = {{"top", 50}, {"right", 50}, {"bottom", 50}, {"left", 50}};
   int width = 0;
   int height = 0;
+  std::string barColor = "#69b3a2";
 
   // D3 selections / scales / axis
   D3::Selection svg;
-  D3::Selection bar;
+  D3::Selection barplot;
+  D3::Selection bars;
+  D3::Selection xAxisSel;
   D3::BandScale xScale;
   D3::LinearScale yScale;
-  D3::Axis<D3::BandScale> xAxis = D3::Axis<D3::BandScale>("bottom", "Bottom Axis", 0);
-  D3::Selection xAxisSel;
-  D3::Axis<D3::LinearScale> yAxis = D3::Axis<D3::LinearScale>("left", "Left Axis", 0);
-  D3::Selection yAxisSel;
+  D3::Axis<D3::BandScale> xAxis;
 
   // data and functions for data values
   emp::array<int, 25> data;
   std::function<int(int, int, int)> return_d =
       [](int d, int i, int j) { return d; };
-  // a way to cheat and sort the array
-  std::function<void()> SortArrayRedraw =
+  
+  // bubble sort button function
+  std::function<void()> BubbleSortButton =
       [this]() { 
-        for (int i = 0; i < data.size(); i++) { data[i] = i + 1; } 
-        Redraw();    
+        bubbleSort(data, data.size());
+        barColor = "purple";
+        UpdateViz();   
       };
-  size_t sort_arr_id;
+  size_t bubble_sort_id;
 
-  // shuffle the array
-  std::function<void()> ShuffleArrayRedraw =
+  // shuffle button function
+  std::function<void()> ShuffleArrayButton =
       [this]() {
         ShuffleArray(data);
-        Redraw();
+        barColor = "#69b3a2";
+        UpdateViz(); 
       };
-  size_t shuffle_arr_id;
+  size_t shuffle_id;
 
 
   ///////////////////////////////
@@ -76,19 +87,19 @@ struct BarPlot {
     // on window resize, redraw everything
     emp::web::OnDocumentReady([this]() {
       emp::OnResize([this]() {
-        Redraw();
+        ResizeUpdate();
       });
     });
 
     // create button functions
-    sort_arr_id = emp::JSWrap(SortArrayRedraw, "SortArrayRedraw"); 
-    sort_arr_id = emp::JSWrap(ShuffleArrayRedraw, "ShuffleArrayRedraw"); 
+    bubble_sort_id = emp::JSWrap(BubbleSortButton, "BubbleSortButton"); 
+    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");  
   }
 
   ~BarPlot() {
     // cleanup button functions  
-    emp::JSDelete(sort_arr_id);  
-    emp::JSDelete(shuffle_arr_id); 
+    emp::JSDelete(bubble_sort_id);  
+    emp::JSDelete(shuffle_id);  
   }
 
 
@@ -104,89 +115,146 @@ struct BarPlot {
     // initialize svg object with proper dimensions
     svg = D3::Select("#emp_d3_wrapper")
               .Append("svg")
-              .SetAttr("id", "barplot")
               .SetAttr("width", width + margin["right"] + margin["left"])
-              .SetAttr("height", height + margin["top"] + margin["bottom"])
-              .Move(margin["left"], margin["top"]);
-
-    // initialize barplot selection
-    bar = svg.Append("g")
-             .SetAttr("id", "bars"); 
+              .SetAttr("height", height + margin["top"] + margin["bottom"]);
+    
+    // create group to hold all barplot elements
+    barplot = svg.Append("g")                 
+                  .SetAttr("id", "barplot") 
+                  .Move(margin["left"], margin["top"]);
 
     // initialize scales
     xScale.SetDomain(data)
           .SetRange(0, width);
-    xScale.SetPadding(0.1);
+    // note that this can't be chained above (need to use a curiously recursive template pattern)
+    xScale.SetPadding(0.15);
 
     yScale.SetDomain(0, data.size())
           .SetRange(height, 0);
 
-    // init axis
-    xAxisSel = svg.Append("g")
-                   .SetAttr("id", "x-axis")
-                   .Move(0, height);
+    // initialize and draw x axis
+    xAxisSel = barplot.Append("g")
+                   .SetAttr("id", "x-axis");
 
-    yAxisSel = svg.Append("g")
-                  .SetAttr("id", "y-axis");
+    xAxis = D3::Axis<D3::BandScale>("bottom", "", -height)
+              .SetScale(xScale)
+              .Draw(xAxisSel);
 
-    xAxis.SetScale(xScale);
-    yAxis.SetScale(yScale);
-  }
+    // initialize and draw bars
+    bars = barplot.Append("g")
+                  .SetAttr("id", "bars"); 
 
-  /// Draws all the necessary components for the viz
-  void DrawViz() {
-    // draw axes
-    xAxis.Draw(xAxisSel);
-    yAxis.Draw(yAxisSel);
-
-    // draw bars
-    bar.SelectAll("rect")
+    bars.SelectAll("rect")
         .Data(data)
         .EnterAppend("rect")
-        .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(return_d(d, i, j)); })
-        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(return_d(d, i, j)); })
+        .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("width", xScale.GetBandwidth())
-        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(return_d(d, i, j)); })
-        .SetAttr("fill", "#69b3a2");
+        // init y and heigh to zero to create animation on page load
+        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(0); })
+        .SetAttr("height", 0)
+        .MakeTransition().SetDuration(2000)
+        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); })
+        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
+        .SetAttr("fill", barColor);
   }
 
-  /// Initializes everything and then draws it
-  void RunApp() {
-    Init();
-    DrawViz();
+  /// A special update that should only be called when the window is getting resized
+  void ResizeUpdate() {
+    // update the SVG if the window has changed size 
+    width = GetParentWidth() - margin["right"] - margin["left"];
+    height = 500 - margin["top"] - margin["bottom"];
+
+    svg.SetAttr("width", width + margin["right"] + margin["left"])
+       .SetAttr("height", height + margin["top"] + margin["bottom"]);
+
+    // update the scales and axes
+    xScale.SetDomain(data)
+          .SetRange(0, width);
+
+    xAxis.Rescale(data, xAxisSel);
+
+    yScale.SetDomain(0, data.size())
+          .SetRange(height, 0);
+
+    // update the bars 
+    bars.SelectAll("rect")
+        .Data(data)
+        .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
+        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
+        .SetAttr("width", xScale.GetBandwidth())
+        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); });
+  }
+
+  /// An update function that should be called when the data is changed (sorted or shuffled)
+  void UpdateViz() {
+    // update the scales and axes
+    xScale.SetDomain(data); 
+    xAxis.Rescale(data, xAxisSel);
+
+    // update the bars 
+    bars.SelectAll("rect")
+        .Data(data)
+        .MakeTransition().SetDuration(1000) 
+        .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
+        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
+        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
+        .SetAttr("fill", barColor);
   }
 
 
   ///////////////////////////////
-  //     HELPER FUNCTIONS     //
+  //     HELPER FUNCTIONS      //
   ///////////////////////////////
-  void ClearBarPlot() {
-    EM_ASM({
-      d3.select("#emp_d3_wrapper")
-        .select("#barplot")
-        .remove();
-    });
-  }
-
-  void Redraw() {
-    ClearBarPlot();
-    RunApp();
-  }
-
+  /// Gets the width of the emp_d3_wrapper div
   double GetParentWidth() { 
     return EM_ASM_DOUBLE({ return $("#emp_d3_wrapper").width(); }); 
   }
 
+  /// Randomly shuffles an array
   void ShuffleArray(emp::array<int, 25> & arr) {
     // obtain a time-based seed:
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    
     std::shuffle(arr.begin(), arr.end(), std::default_random_engine(seed)); 
   }
+
+  /// Swaps two elements
+  void swap(int *xp, int *yp)  {  
+    int temp = *xp;  
+    *xp = *yp;  
+    *yp = temp;  
+  }  
+
+  /// Prints an array
+  template <size_t SIZE> 
+  void printArray(emp::array<int, SIZE> empArr, int size) {  
+    int i;  
+    for (i = 0; i < size; i++)  
+      std::cout << empArr[i] << " ";  
+    std::cout << std::endl;  
+  }  
+
+  // BUBBLE SORT 
+  /// Implements bubble sort (source: https://www.geeksforgeeks.org/bubble-sort/)
+  template <size_t SIZE> 
+  void bubbleSort(emp::array<int, SIZE> & empArr, int size)  {  
+    int i, j;  
+    
+    for (i = 0; i < size-1; i++) { 
+      // Last i elements are already in place  
+      for (j = 0; j < size-i-1; j++) {
+        if (empArr[j] > empArr[j+1]) {  
+          swap(&empArr[j], &empArr[j+1]);
+        }
+      }
+    }
+  }  
+
+  // Other sorting alg
+  /// Implements other sorting alg
 };
 
-BarPlot test{};
+BarPlot barChart{};
 
 int main() {
-  test.RunApp();  
+  barChart.Init();   
 }
