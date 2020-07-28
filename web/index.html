@@ -34,7 +34,8 @@
 
     <!-- Page header -->
     <div class="jumbotron pb-1 pt-4 mb-4 rounded-0">
-        <h1 class="display-4">Visualizing Sorting Algorithms</h1>
+        <h1 class="display-4"> <a onClick="window.location.reload();" style="cursor: pointer;"> Visualizing Sorting
+                Algorithms </a> </h1>
         <hr class="my-4">
         <p>Created by <a href="https://github.com/Oliver-BE" target="_blank">Oliver Baldwin Edwards
             </a>using <a href="https://github.com/devosoft/Empirical" target="_blank">Empirical's</a> D3-wrapper </p>
@@ -63,6 +64,7 @@
                             Sort</button>
                         <button type="button" class="btn btn-dark btn-lg btn-block" style="margin-bottom: 10px;"
                             onclick="emp.ShuffleArrayButton()">Shuffle</button>
+                        <div id="emp_stats"></div>
                     </div>
                 </div>
             </div>
@@ -73,7 +75,7 @@
             <div class="col">
                 <div class="card">
                     <!-- Card heading -->
-                    <h4 class="card-header"><i class="fas fa-question-circle"></i> What is this? </h4>
+                    <h4 class="card-header"><i class="fas fa-question-circle"></i> How was this made? </h4>
                 </div>
             </div>
         </div>

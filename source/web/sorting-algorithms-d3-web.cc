@@ -11,6 +11,7 @@
 #include "web/init.h"
 #include "web/web.h"
 #include "web/Document.h"
+#include "web/Animate.h"
 
 #include "web/js_utils.h"
 #include "base/array.h"
@@ -25,13 +26,16 @@
 
 // levenshtein distance (steps to finish graphic)
 // some distribution graphic
-// nice panel to hold buttons
 // add info button / link to blogpost
-// remove landing page
 
 // slidey bar to go through steps
 // keep track of each step in an array of arrays (each index holds one iteration of sorting alg)
 // then slide through the iterations
+// display num steps taken
+
+// add bar plot that takes the num of steps for each sorting alg and generates avg num steps taken
+
+emp::web::Document emp_stats("emp_stats");
 
 struct BarPlot {
   ///////////////////////////////
@@ -75,11 +79,16 @@ struct BarPlot {
       };
   size_t shuffle_id;
 
+  // bubble sort meta data
+  int bs_num_steps = 0;
 
   ///////////////////////////////
   //        CONSTRUCTORS       //
   ///////////////////////////////
   BarPlot() {
+    // add live counter to page
+    emp_stats << "Bubble Sort took: " << emp::web::Live(bs_num_steps) << " steps.";
+
     // init data and shuffle it
     for (int i = 0; i < data.size(); i++) { 
       data[i] = i + 1;
@@ -240,17 +249,25 @@ struct BarPlot {
   // BUBBLE SORT 
   /// Implements bubble sort (source: https://www.geeksforgeeks.org/bubble-sort/)
   template <size_t SIZE> 
-  void bubbleSort(emp::array<int, SIZE> & empArr, int size)  {  
-    int i, j;  
-    
+  void bubbleSort(emp::array<int, SIZE> & empArr, int size)  {
+    // reset num of steps taken
+    bs_num_steps = 0;
+    emp_stats.Redraw();
+    int i, j; 
+
     for (i = 0; i < size-1; i++) { 
       // Last i elements are already in place  
       for (j = 0; j < size-i-1; j++) {
         if (empArr[j] > empArr[j+1]) {  
           swap(&empArr[j], &empArr[j+1]);
+          bs_num_steps++;
+          emp_stats.Redraw();
         }
       }
     }
+
+    // if not already sorted, add the num of steps taken to our data
+    // if(bs_num_steps != 0) { array.push(bs_num_steps)}
   }  
 
   // Other sorting alg
