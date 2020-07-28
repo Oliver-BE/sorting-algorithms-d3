@@ -23,20 +23,22 @@
 #include "web/d3/axis.h"
 #include "web/d3/utils.h" 
 
-// have an update function that will update everything based on new data
-// in the sorting algorithm, after every step / swap, call that update function and/or redraw everything with the new data
 // levenshtein distance (steps to finish graphic)
 // some distribution graphic
 // nice panel to hold buttons
+// add info button / link to blogpost
+// remove landing page
 
 // slidey bar to go through steps
+// keep track of each step in an array of arrays (each index holds one iteration of sorting alg)
+// then slide through the iterations
 
 struct BarPlot {
   ///////////////////////////////
   //     MEMBER VARIABLES      //
   ///////////////////////////////
   // basic barplot layout vars
-  emp::map<std::string, int> margin = {{"top", 50}, {"right", 50}, {"bottom", 50}, {"left", 50}};
+  emp::map<std::string, int> margin = {{"top", 25}, {"right", 50}, {"bottom", 50}, {"left", 50}};
   int width = 0;
   int height = 0;
   std::string barColor = "#69b3a2";
@@ -111,7 +113,7 @@ struct BarPlot {
     // init height and width (based on parent div width)
     width = GetParentWidth() - margin["right"] - margin["left"];
     height = 500 - margin["top"] - margin["bottom"];
-    
+
     // initialize svg object with proper dimensions
     svg = D3::Select("#emp_d3_wrapper")
               .Append("svg")
@@ -134,7 +136,7 @@ struct BarPlot {
 
     // initialize and draw x axis
     xAxisSel = barplot.Append("g")
-                   .SetAttr("id", "x-axis");
+                      .SetAttr("id", "x-axis");
 
     xAxis = D3::Axis<D3::BandScale>("bottom", "", -height)
               .SetScale(xScale)
@@ -149,7 +151,7 @@ struct BarPlot {
         .EnterAppend("rect")
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("width", xScale.GetBandwidth())
-        // init y and heigh to zero to create animation on page load
+        // init y value and height to zero to create animation on page load
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(0); })
         .SetAttr("height", 0)
         .MakeTransition().SetDuration(2000)
@@ -159,6 +161,7 @@ struct BarPlot {
   }
 
   /// A special update that should only be called when the window is getting resized
+  /// Keeps everything intact while accounting for change in window size
   void ResizeUpdate() {
     // update the SVG if the window has changed size 
     width = GetParentWidth() - margin["right"] - margin["left"];
@@ -167,7 +170,7 @@ struct BarPlot {
     svg.SetAttr("width", width + margin["right"] + margin["left"])
        .SetAttr("height", height + margin["top"] + margin["bottom"]);
 
-    // update the scales and axes
+    // update the scales and axes based on new window size
     xScale.SetDomain(data)
           .SetRange(0, width);
 
@@ -176,7 +179,7 @@ struct BarPlot {
     yScale.SetDomain(0, data.size())
           .SetRange(height, 0);
 
-    // update the bars 
+    // update the bars based on new window size
     bars.SelectAll("rect")
         .Data(data)
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
