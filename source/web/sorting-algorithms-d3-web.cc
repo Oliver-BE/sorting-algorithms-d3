@@ -45,7 +45,7 @@ struct BarPlot {
   emp::map<std::string, int> margin = {{"top", 25}, {"right", 25}, {"bottom", 25}, {"left", 25}};
   int width = 0;
   int height = 0;
-  std::string barColor = "#69b3a2";
+  std::string barColor = "#ff974d";
 
   // D3 selections / scales / axis
   D3::Selection svg;
@@ -62,10 +62,11 @@ struct BarPlot {
       [](int d, int i, int j) { return d; };
   
   // bubble sort button function
+  /// Runs bubble sort on the data and updates the visualization appropriately
   std::function<void()> BubbleSortButton =
       [this]() { 
         bubbleSort(data, data.size());
-        barColor = "purple";
+        barColor = "#69b3a2";
         UpdateViz();   
       };
   size_t bubble_sort_id;
@@ -74,13 +75,14 @@ struct BarPlot {
   std::function<void()> ShuffleArrayButton =
       [this]() {
         ShuffleArray(data);
-        barColor = "#69b3a2";
-        UpdateViz(); 
+        barColor = "#ff974d";
+        UpdateViz();
       };
   size_t shuffle_id;
 
   // bubble sort meta data
   int bs_num_steps = 0;
+  emp::vector<emp::array<int, 25>> bs_steps_vec;
 
   ///////////////////////////////
   //        CONSTRUCTORS       //
@@ -260,6 +262,10 @@ struct BarPlot {
       for (j = 0; j < size-i-1; j++) {
         if (empArr[j] > empArr[j+1]) {  
           swap(&empArr[j], &empArr[j+1]);
+
+          // add new step to vector
+          bs_steps_vec.emplace_back(empArr);
+          // increment total num steps and redraw the number on webpage
           bs_num_steps++;
           emp_stats.Redraw();
         }
