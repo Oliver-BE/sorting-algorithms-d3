@@ -83,14 +83,18 @@ struct BarPlot {
 
   // bubble sort meta data
   int bs_num_steps = 0;
+  int total_bs_num_steps = 0;
+  int bs_num_times_sorted = 0;
+  int avg_bs_num_steps = 0;
   emp::vector<emp::array<int, 25>> bs_steps_vec;
 
   ///////////////////////////////
   //        CONSTRUCTORS       //
   ///////////////////////////////
   BarPlot() {
-    // add live counter to page
-    emp_stats << "Bubble Sort took: " << emp::web::Live(bs_num_steps) << " steps.";
+    // add live counters to page
+    emp_stats << "<hr>" << "Bubble Sort last took: " << emp::web::Live(bs_num_steps) << " steps." << "<hr>";
+    emp_stats << "Avg num Bubble Sort steps: " << emp::web::Live(avg_bs_num_steps);
 
     // init data and shuffle it
     for (int i = 0; i < data.size(); i++) { 
@@ -273,8 +277,16 @@ struct BarPlot {
       }
     }
 
-    // if not already sorted, add the num of steps taken to our data
-    // if(bs_num_steps != 0) { array.push(bs_num_steps)}
+    // if the array wasn't already sorted, update our metadata
+    if(bs_num_steps != 0) {
+      // increment how many times it's been sorted
+      bs_num_times_sorted++;
+      // update total number of steps taken
+      total_bs_num_steps = total_bs_num_steps + bs_num_steps;
+      // update avg num of steps taken (total / number of times sorted)
+      avg_bs_num_steps = total_bs_num_steps / bs_num_times_sorted;
+      emp_stats.Redraw();
+    }
   }  
 
   // Other sorting alg
