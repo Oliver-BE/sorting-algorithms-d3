@@ -49,31 +49,52 @@
 
         <!-- Row 1 -->
         <div class="row mb-2">
-            <!-- Bar chart -->
-            <div class="col-s-12 col-md-9">
+            <!-- Bar chart column-->
+            <div class="col-s-12 col-md-8">
                 <div class="card">
                     <h4 class="card-header"><i class="fas fa-chart-bar"></i> Sort me! </h4>
                     <!-- Here is where C++ code comes in -->
                     <div id="emp_d3_wrapper"></div>
                 </div>
             </div>
-            <!-- Buttons -->
-            <div class="col-s-12 col-md-3">
-                <div class="card">
-                    <h4 class="card-header"><i class="fas fa-cog"></i> Buttons! </h4>
-                    <div id="buttons_div" class="p-2">
-                        <button type="button" class="btn btn-primary btn-lg btn-block" style="margin-top: 10px;"
-                            onclick="emp.BubbleSortButton()">Bubble
-                            Sort</button>
-                        <button type="button" class="btn btn-dark btn-lg btn-block" style="margin-bottom: 10px;"
-                            onclick="emp.ShuffleArrayButton()">Shuffle</button>
-                        <div id="emp_stats"></div>
+            <!-- Buttons and stats column-->
+            <div class="col-s-12 col-md-4">
+                <!-- Buttons row -->
+                <div class="row mb-2">
+                    <div class="col">
+                        <div class="card">
+                            <h4 class="card-header"><i class="fas fa-cog"></i> Controls! </h4>
+                            <div id="buttons_div" class="p-2">
+                                <button id="bubble-sort-button" type="button" class="btn btn-primary btn-lg btn-block"
+                                    style="margin-top: 10px; margin-bottom: 10px;"
+                                    onclick="emp.BubbleSortButton()">Bubble
+                                    Sort</button>
+                                <!-- C++ code comes in here -->
+                                <div id="emp_controls"></div>
+                                <!-- TODO: make the slider inactive if bubble sort hasn't been clicked -->
+                                <!-- TODO: make the slider incrementable -->
+                                <button id="shuffle-button" type="button" class="btn btn-dark btn-lg btn-block"
+                                    style="margin-top: 10px; margin-bottom: 10px;"
+                                    onclick="emp.ShuffleArrayButton()">Shuffle</button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Stats row -->
+                <div class="row mb-2">
+                    <div class="col">
+                        <div class="card">
+                            <h4 class="card-header"><i class="fas fa-flask"></i> Stats! </h4>
+                            <div id="stats_div" class="p-2">
+                                <!-- C++ code comes in here -->
+                                <div id="emp_stats"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- TODO: add statistics card -->
 
         <!-- Row 2 -->
         <div class="row mb-2">
