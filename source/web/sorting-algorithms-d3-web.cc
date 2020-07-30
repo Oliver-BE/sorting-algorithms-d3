@@ -27,20 +27,14 @@
 
 // levenshtein distance (swaps to finish graphic)
 // some distribution graphic
-// add info button / link to blogpost
 // add set delay in transition.h
-
-// slidey bar to go through swaps
-// keep track of each step in an array of arrays (each index holds one iteration of sorting alg)
-// then slide through the iterations
-// display num swaps taken
 
 // add bar plot that takes the num of swaps for each sorting alg and generates avg num swaps taken
 
-// TODO: add increment buttons to slider
 // TODO: get rid of slider initially showing up
 // TODO: fix bubble sort being initially clickable 
 // TOOD: fix stats initially showing up
+// TODO: fix colors
 // ideas: maybe just do a dummy bubble sort that doesn't actually do anything (but ensures no crashing) and then click bubble sort button normally
 
 // set up divs
@@ -73,8 +67,6 @@ struct BarPlot {
   
   // bubble sort button function
   /// Runs bubble sort on the data and updates the visualization appropriately
-  bool bs_unclicked = true;
-
   std::function<void()> BubbleSortButton =
       [this]() { 
         // show slider
@@ -106,8 +98,13 @@ struct BarPlot {
       };
   size_t shuffle_id;
 
-  // bubble sort slider
+  // bubble sort slider / input buttons
   emp::web::Input bs_slider;
+  emp::web::Button bs_inc_down;
+  emp::web::Button bs_inc_up;
+  emp::web::Button bs_play;
+  bool playing = false;
+  size_t playing_id;
 
   // bubble sort meta data
   int bs_num_swaps = 0;
@@ -139,7 +136,9 @@ struct BarPlot {
 
     // create button functions
     bubble_sort_id = emp::JSWrap(BubbleSortButton, "BubbleSortButton"); 
-    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton"); 
+    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");
+
+    playing_id = emp::JSWrap([this]() { playing = false; }, "SetPlayFalse");
   }
 
   ~BarPlot() {
@@ -210,6 +209,19 @@ struct BarPlot {
     // create sliders
     bs_slider = emp::web::Input([this](std::string curr) { 
       int val = emp::from_string<int>(curr);
+      int max_val = emp::from_string<int>(bs_slider.GetMax());
+
+      if(val >= max_val) {
+        EM_ASM({
+          $("#play-button").attr("disabled", true);
+        });
+      }
+      else if(val < max_val && !playing) { 
+        EM_ASM({
+          $("#play-button").attr("disabled", false);
+        });
+      }
+
       // update viz on change
       UpdateViz(bs_swaps_vec[val]);
       printArray(bs_swaps_vec[val], 25);
@@ -219,18 +231,87 @@ struct BarPlot {
     bs_slider.Min(0);
     bs_slider.Max(bs_num_swaps);
     bs_slider.Value(0);
+    bs_slider.SetAttr("style", "width: 85%; cursor: pointer;"); 
 
-    controls_div << bs_slider; 
-    // TODO: style="display: none;" on slider div
-    // initially set slider display as none
-    controls_div.SetAttr("style", "display: block;");
-    bs_slider.SetAttr("style", "width: 100%;");
+    // create increment buttons for slider
+    // TODO: fix bs_inc button styles
+    // TODO: add current slider value to screen 
+    // TODO: make sure bubble sort isn't hooked up with play button
+    bs_inc_down = emp::web::Button([this]() {
+      int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
+      if(current_val != 0) {
+        bs_slider.Value(current_val - 1);
+      }
+    }, "<i class='fa fa-minus'></i>", "bs-inc-down-button");
+    bs_inc_down.SetAttr("class", "btn btn-outline-primary btn-sm");
+    bs_inc_down.SetAttr("style", "width: 7.5%; min-width: 31px, cursor: pointer;");
+
+    bs_inc_up = emp::web::Button([this]() {
+      int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
+      int max_val = emp::from_string<int>(bs_slider.GetMax());
+      if(current_val != max_val) {
+        bs_slider.Value(current_val + 1);
+      } 
+      
+    }, "<i class='fa fa-plus'></i>", "bs-inc-up-button");
+    bs_inc_up.SetAttr("class", "btn btn-outline-primary btn-sm");
+    bs_inc_up.SetAttr("style", "width: 7.5%; min-width: 31px; cursor: pointer;");
+
+
+
+    // custom play event
+    EM_ASM({
+      $(document).on("bs_play_button_press", function(event) {
+
+        var curr_val = parseInt($("#bs_slider").attr("value"));
+        var max_val = parseInt($("#bs_slider").attr("max"));
+        // if not at max slider value
+        if(curr_val < max_val) {
+          $("#bs_slider").attr("value", curr_val + 1);
+          $("#bs_slider").trigger("change");
+
+          setTimeout(function() {
+            // trigger play button press again
+            $(document).trigger("bs_play_button_press");
+          }, 50); 
+        }
+
+        else {
+          emp.SetPlayFalse();
+        }
+      });
+    });
+
+    bs_play = emp::web::Button([this]() {
+      playing = true;
+      EM_ASM({
+        $("#play-button").attr("disabled", true);
+        $(document).trigger("bs_play_button_press");
+      }); 
+    }, "<i class='fa fa-play'></i>", "play-button");
+
+    bs_play.SetAttr("class", "btn btn-success btn-sm");
+    bs_play.SetAttr("style", "width: 25%; margin-left: 37.5%; margin-right: 37.5%; cursor: pointer;");
+
+    
+    // add buttons to controls div
+    controls_div << bs_inc_down;
+    controls_div << bs_slider;
+    controls_div << bs_inc_up;
+    controls_div << "<br>" << bs_play;
+    // controls_div << "<br>" << emp::web::Live(emp::from_string<int>(bs_slider.GetCurrValue()));
+
+    // initially set slider display as none 
+    controls_div.SetAttr("style", "display: block; text-align: center; vertical-align: middle;");
 
     bubbleSortUpdateStats();
+
+    // TODO: disable slider on play
+    // TODO: remove pointers on disable
   }
 
   /// A special update that should only be called when the window is getting resized
-  /// Keeps everything intact while accounting for change in window size
+  /// Keeps everything intact while accounting for change in window size  
   void ResizeUpdate() {
     // update the SVG if the window has changed size 
     width = GetParentWidth() - margin["right"] - margin["left"];
@@ -270,11 +351,11 @@ struct BarPlot {
     // update the bars 
     bars.SelectAll("rect")
         .Data(newData, return_d)
-        .MakeTransition().SetDuration(1000) 
+        .MakeTransition().SetDuration(50) 
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
         .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
-        .SetAttr("fill", barColor);
+        .SetAttr("fill", barColor); 
   }
 
 
