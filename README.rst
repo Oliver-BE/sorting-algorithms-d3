@@ -12,8 +12,9 @@ This project is meant to serve as a demo for how the new D3-wrapper can be used 
 Along with `@elizabethcarney`_, `@amlalejini`_, and `@emilydolson`_ I worked on creating a C++ wrapper for D3.js_, a JavaScript library that allows for custom-made, interactive visualizations.   
 We began the process of overhauling Empirical's web visualization support for use in the next version of Avida-ED_.
 
-**For more information on what I did, see `this blog post I wrote`_.**  
-**To checkout the live web app, see `https://Oliver-BE.github.io/sorting-algorithms-d3`_.**
+**For more information on what I did, see** `this blog post I wrote`_. 
+
+**To checkout the live web app, see** `https://Oliver-BE.github.io/sorting-algorithms-d3`_.
 
 
 Features
