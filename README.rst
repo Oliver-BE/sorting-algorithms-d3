@@ -9,11 +9,11 @@ sorting-algorithms-d3
 This web app is written entirely in C++ and utilizes the Empirical_ D3-wrapper to create an interactive visualization of different sorting algorithms.
 This project is meant to serve as a demo for how the new D3-wrapper can be used with Empirical to create powerful web apps.
 
-Along with @elizabethcarney_, @amlalejini_, and @emilydolson_ I worked on creating a C++ wrapper for D3.js_, a JavaScript library that allows for custom-made, interactive visualizations.   
+Along with `@elizabethcarney`_, `@amlalejini`_, and `@emilydolson`_ I worked on creating a C++ wrapper for D3.js_, a JavaScript library that allows for custom-made, interactive visualizations.   
 We began the process of overhauling Empirical's web visualization support for use in the next version of Avida-ED_.
-For more information on what I did, see `this blogpost I wrote`_.
 
-Check out the live in-browser web app at `https://Oliver-BE.github.io/sorting-algorithms-d3`_.
+**For more information on what I did, see `this blog post I wrote`_.**  
+**To checkout the live web app, see `https://Oliver-BE.github.io/sorting-algorithms-d3`_.**
 
 
 Features
@@ -33,10 +33,10 @@ This package was created with Cookiecutter_ and the `devosoft/cookiecutter-empir
 .. _Empirical: https://github.com/devosoft/Empirical
 .. _D3.js: https://d3js.org/
 .. _Avida-ED: https://avida-ed.msu.edu/
-.. _@elizabethcarney: https://github.com/elizabethcarney
-.. _@amlalejini: https://github.com/amlalejini
-.. _@emilydolson: https://github.com/emilydolson_
-.. _`this blogpost I wrote`: https://mmore500.com/waves/blog.html
+.. _`@elizabethcarney`: https://github.com/elizabethcarney
+.. _`@amlalejini`: https://github.com/amlalejini
+.. _`@emilydolson`: https://github.com/emilydolson_
+.. _`this blog post I wrote`: https://mmore500.com/waves/blog.html
 .. _`https://Oliver-BE.github.io/sorting-algorithms-d3`: https://Oliver-BE.github.io/sorting-algorithms-d3
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`devosoft/cookiecutter-empirical-project`: https://github.com/devosoft/cookiecutter-empirical-project
