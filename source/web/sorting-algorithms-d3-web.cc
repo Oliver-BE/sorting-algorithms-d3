@@ -30,7 +30,6 @@
 // TODO: add more sorting algorithms (if code structure becomes better, this should become easier)
 // TODO: add bar plot that takes the num of swaps for each sorting alg and generates avg num swaps taken 
 
-// TODO: fix value formatting on manual slider change
 // TODO: fix colors
 // TODO: make play work after manually changing slider (only works after using plus or minus buttons)
 
@@ -92,6 +91,7 @@ struct BarPlot {
         // shuffle the data
         ShuffleArray(data);
         // barColor = "#fc9723";
+
         // update the barchart based on the new data
         UpdateViz(data);
 
@@ -149,19 +149,9 @@ struct BarPlot {
     for (int i = 0; i < data.size(); i++) { 
       data[i] = i + 1;
     }
-    ShuffleArray(data);
+    ShuffleArray(data); 
 
-    // on window resize, redraw everything
-    emp::web::OnDocumentReady([this]() {
-      emp::OnResize([this]() {
-        ResizeUpdate();
-      });
-    });
-
-    // create button functions
-    bubble_sort_id = emp::JSWrap(BubbleSortButton, "BubbleSortButton"); 
-    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");
-    set_isPlaying_false_id = emp::JSWrap([this]() { isPlaying = false; }, "SetIsPlayingFalse");
+    
   }
 
   ~BarPlot() {
@@ -210,34 +200,32 @@ struct BarPlot {
     // we want to sort the data and initially draw the 0th step 
     bubbleSort(data, data.size());
 
-    // init height and width (based on parent div width)
-    width = GetParentWidth() - margin["right"] - margin["left"];
-    height = 450 - margin["top"] - margin["bottom"];
+    // init height and width (based on parent div width) 
+    width = 725;
+    height = 450;
 
     // initialize svg object with proper dimensions
     svg = D3::Select("#emp_d3_wrapper")
               .Append("svg")
-              .SetAttr("width", width + margin["right"] + margin["left"])
-              .SetAttr("height", height + margin["top"] + margin["bottom"]);
+              .SetAttr("viewBox", "0 0 " + std::to_string(width)+ " " + std::to_string(height)); 
     
     // create group to hold all barplot elements
     barplot = svg.Append("g")                 
-                  .SetAttr("id", "barplot") 
-                  .Move(margin["left"], margin["top"]);
+                  .SetAttr("id", "barplot");  
 
     // initialize scales
     xScale.SetDomain(bs_swaps_vec[0]) 
-          .SetRange(0, width);
+          .SetRange(margin["left"], width - margin["right"]); 
     // note that this can't be chained above (need to use a curiously recursive template pattern)
     xScale.SetPadding(0.15);
 
     yScale.SetDomain(0, data.size())
-          .SetRange(height, 0);
+          .SetRange(height - margin["bottom"], margin["top"]); 
 
     // initialize and draw x axis
     xAxisSel = barplot.Append("g")
                       .SetAttr("id", "x-axis")
-                      .Move(0, height);
+                      .Move(0, height - margin["bottom"]);
 
     xAxis = D3::Axis<D3::BandScale>("bottom", "", 0)
               .SetScale(xScale)
@@ -258,7 +246,7 @@ struct BarPlot {
         .SetAttr("height", 0)
         .MakeTransition().SetDuration(1750)
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); })
-        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
+        .SetAttr("height", [this](int d, int i, int j) { return height - margin["top"] - yScale.ApplyScale<int, int>(d); })
         .SetAttr("fill", barColor);
   }
 
@@ -267,15 +255,15 @@ struct BarPlot {
     bs_slider = emp::web::Input([this](std::string curr) { 
       // add tool tip
       AddSliderToolTip();
-      
+
       // read in current slider value
       int val = emp::from_string<int>(curr);
       current_slider_value = val;
+      // redraw slider value
+      slider_value_div.Redraw();
 
       // update viz on slider change
       UpdateViz(bs_swaps_vec[val]); 
-      // redraw slider value
-      // slider_value_div.Redraw();
       std::cout << val << std::endl;
 
     }, "range", "", "bs_slider");
@@ -301,6 +289,11 @@ struct BarPlot {
   }
 
   void CreateButtons() {
+    // create JSWrap button functions
+    bubble_sort_id = emp::JSWrap(BubbleSortButton, "BubbleSortButton"); 
+    shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");
+    set_isPlaying_false_id = emp::JSWrap([this]() { isPlaying = false; }, "SetIsPlayingFalse");
+
     // add increment down button
     bs_inc_down = emp::web::Button([this]() {
       int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
@@ -377,39 +370,6 @@ struct BarPlot {
     bs_play.SetAttr("style", "width: 35%;");
   }
 
-  
-
-  /// A special update that should only be called when the window is getting resized
-  /// Keeps everything intact while accounting for change in window size  
-  void ResizeUpdate() {
-    // figure out current value of slider and thus the proper data to use
-    int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
-
-    // update the SVG if the window has changed size 
-    width = GetParentWidth() - margin["right"] - margin["left"];
-    height = 450 - margin["top"] - margin["bottom"];
-
-    svg.SetAttr("width", width + margin["right"] + margin["left"])
-       .SetAttr("height", height + margin["top"] + margin["bottom"]);
-
-    // update the scales and axes based on new window size
-    xScale.SetDomain(bs_swaps_vec[current_val])
-          .SetRange(0, width);
-
-    xAxis.Rescale(bs_swaps_vec[current_val], xAxisSel);
-
-    yScale.SetDomain(0, data.size())
-          .SetRange(height, 0);
-
-    // update the bars based on new window size
-    bars.SelectAll("rect")
-        .Data(bs_swaps_vec[current_val], return_d)
-        .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
-        .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
-        .SetAttr("width", xScale.GetBandwidth())
-        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); });
-  }
-
   /// An update function that should be called when the data is changed (sorted or shuffled)
   void UpdateViz(emp::array<int, 25> newData) {
     // if we're playing, make the transition faster
@@ -434,7 +394,7 @@ struct BarPlot {
         .MakeTransition().SetDuration(transitionDuration) 
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
-        .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
+        .SetAttr("height", [this](int d, int i, int j) { return height - margin["top"] - yScale.ApplyScale<int, int>(d); })
         .SetAttr("fill", barColor); 
   }
 
@@ -442,11 +402,6 @@ struct BarPlot {
   ///////////////////////////////
   //     HELPER FUNCTIONS      //
   ///////////////////////////////
-  /// Gets the width of the emp_d3_wrapper div
-  double GetParentWidth() { 
-    return EM_ASM_DOUBLE({ return $("#emp_d3_wrapper").width(); }); 
-  }
-
   /// Randomly shuffles an array
   void ShuffleArray(emp::array<int, 25> & arr) {
     // obtain a time-based seed:

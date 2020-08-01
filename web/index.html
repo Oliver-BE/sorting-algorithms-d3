@@ -85,7 +85,6 @@
                                     Sort</button>
                                 <!-- C++ code comes in here -->
                                 <div id="emp_controls"></div>
-                                <hr>
                                 <button id="shuffle-button" type="button" class="btn btn-dark btn-lg btn-block"
                                     style="margin-top: 10px; margin-bottom: 10px;"
                                     onclick="emp.ShuffleArrayButton()">Shuffle</button>
@@ -118,7 +117,7 @@
                             data-toggle="collapse" data-target="#info-card" aria-expanded="true"
                             aria-controls="info-card">
                             <h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i>
-                                How was this made? <i class="fas fa-chevron-down" style="float:right;"></i></h4>
+                                What is this? <i class="fas fa-chevron-down" style="float:right;"></i></h4>
                         </button>
                     </div>
                     <!-- Card body -->
@@ -133,14 +132,6 @@
                                 If you want to know more than that, <a
                                     href="http://emilyldolson.com/contact.html">contact me</a>! I love
                                 talking about this stuff.
-                            </p>
-                            <br>
-
-                            <h4> What settings did you use in the paper? </h4>
-                            <p>
-                                The settings used in the paper are the defaults on this page. I chose them somewhat
-                                arbitrarily and am
-                                currently working on characterizing them more systematically.
                             </p>
                             <br>
 
@@ -209,13 +200,13 @@
 
             <!-- Set up tool-tips for things other than interaction networks-->
             <script>
-                // add jQuery to "How was this made?" card
+                // add jQuery to "What is this?" card
                 $('#info-card').on('hidden.bs.collapse', function () {
-                    $('#collapseBtn').html('<h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i> How was this made ? <i class="fas fa-chevron-down" style="float:right;"></i></h4>');
+                    $('#collapseBtn').html('<h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i> What is this? <i class="fas fa-chevron-down" style="float:right;"></i></h4>');
                 });
 
                 $('#info-card').on('shown.bs.collapse', function () {
-                    $('#collapseBtn').html('<h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i> How was this made ? <i class="fas fa-chevron-up" style="float:right;"></i></h4>');
+                    $('#collapseBtn').html('<h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i> What is this? <i class="fas fa-chevron-up" style="float:right;"></i></h4>');
                 });
             </script>
 
