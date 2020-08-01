@@ -12,6 +12,7 @@
 #include "web/web.h"
 #include "web/Input.h"
 #include "web/Document.h"
+#include "web/Element.h"
 #include "web/Animate.h"
 
 #include "web/js_utils.h"
@@ -25,31 +26,31 @@
 #include "web/d3/axis.h"
 #include "web/d3/utils.h" 
 
-// levenshtein distance (swaps to finish graphic)
-// some distribution graphic
-// add set delay in transition.h
+// TODO: clean up overall code structure
+// TODO: add more sorting algorithms (if code structure becomes better, this should become easier)
+// TODO: add bar plot that takes the num of swaps for each sorting alg and generates avg num swaps taken 
 
-// add bar plot that takes the num of swaps for each sorting alg and generates avg num swaps taken
-
-// TODO: get rid of slider initially showing up
-// TODO: fix bubble sort being initially clickable 
-// TOOD: fix stats initially showing up
+// TODO: fix value formatting on manual slider change
 // TODO: fix colors
-// ideas: maybe just do a dummy bubble sort that doesn't actually do anything (but ensures no crashing) and then click bubble sort button normally
+// TODO: make play work after manually changing slider (only works after using plus or minus buttons)
 
 // set up divs
 emp::web::Document stats_div("emp_stats");
 emp::web::Document controls_div("emp_controls");
+emp::web::Document slider_div("emp_slider");
+emp::web::Document slider_value_div("emp_slider_val");
+emp::web::Document slider_controls_div("emp_slider_controls");
 
 struct BarPlot {
   ///////////////////////////////
   //     MEMBER VARIABLES      //
   ///////////////////////////////
-  // basic barplot layout vars
+  // barplot layout vars
   emp::map<std::string, int> margin = {{"top", 25}, {"right", 25}, {"bottom", 25}, {"left", 25}};
   int width = 0;
   int height = 0;
   std::string barColor = "#fc9723";
+  int transitionDuration = 750; 
 
   // D3 selections / scales / axis
   D3::Selection svg;
@@ -69,12 +70,13 @@ struct BarPlot {
   /// Runs bubble sort on the data and updates the visualization appropriately
   std::function<void()> BubbleSortButton =
       [this]() { 
-        // show slider
+        // show slider and stats
         controls_div.SetAttr("style", "display: block;");
-        // sort data / update stats
+        stats_div.SetAttr("style", "display: block;"); 
+        // sort data / update stats and controls
         bubbleSort(data, data.size());
         bubbleSortUpdateStats();
-        bubbleSortUpdateControls();
+        bubbleSortUpdateSlider();
         // disable the bubble sort button
         EM_ASM({
           $("#bubble-sort-button").attr("disabled", true);
@@ -85,13 +87,15 @@ struct BarPlot {
   // shuffle button function
   std::function<void()> ShuffleArrayButton =
       [this]() {
-        // hide slider
+        // hide bubble sort slider
         controls_div.SetAttr("style", "display: none;");
+        // shuffle the data
         ShuffleArray(data);
         // barColor = "#fc9723";
+        // update the barchart based on the new data
         UpdateViz(data);
 
-        // enable the bubble sort button
+        // after shuffle, re-enable the bubble sort button
         EM_ASM({
           $("#bubble-sort-button").attr("disabled", false);
         });
@@ -100,11 +104,13 @@ struct BarPlot {
 
   // bubble sort slider / input buttons
   emp::web::Input bs_slider;
+  int current_slider_value = 0;
   emp::web::Button bs_inc_down;
   emp::web::Button bs_inc_up;
   emp::web::Button bs_play;
-  bool playing = false;
-  size_t playing_id;
+  // keep track of whether or not the play button is active
+  bool isPlaying = false;
+  size_t set_isPlaying_false_id;
 
   // bubble sort meta data
   int bs_num_swaps = 0;
@@ -113,13 +119,31 @@ struct BarPlot {
   int avg_bs_num_swaps = 0;
   emp::vector<emp::array<int, 25>> bs_swaps_vec{};
 
+
   ///////////////////////////////
   //        CONSTRUCTORS       //
   ///////////////////////////////
   BarPlot() {
-    // add live counters to page
-    stats_div << "Bubble Sort last took: " << emp::web::Live(bs_num_swaps) << " swaps." << "<hr>";
-    stats_div << "Avg num Bubble Sort swaps: " << emp::web::Live(avg_bs_num_swaps) << "<hr>";
+    // add title to stats card
+    stats_div <<  emp::web::Div("stats-title").SetAttr("style", "display: flex; justify-content: space-around;")
+              << "<h5 class='card-title mt-2 mb-0'> Bubble Sort Statistics </h5>";
+    // add last number of swaps to card
+    stats_div << "<hr>"
+              << emp::web::Div("num-swaps-div").SetAttr("style", "display: flex; justify-content: space-between;")
+              << "Bubble Sort last used:"
+              << emp::web::Element("span", "num-swaps-badge").SetAttr("class", "badge badge-info ml-1 d-inline-flex align-items-center");
+    stats_div.Div("num-swaps-badge") 
+        << emp::web::Live(bs_num_swaps) << " swaps";
+    // add avg number of swaps to card
+    stats_div << "<hr>" 
+              << emp::web::Div("avg-num-swaps-div").SetAttr("style", "display: flex; justify-content: space-between;")
+              << "Bubble Sort on average has used:"
+              << emp::web::Element("span", "avg-num-swaps-badge").SetAttr("class", "badge badge-info ml-1 d-inline-flex align-items-center");
+    stats_div.Div("avg-num-swaps-badge") 
+        << emp::web::Live(avg_bs_num_swaps) << " swaps";
+
+    // initially hide the stats
+    stats_div.SetAttr("style", "display: none;");
 
     // init data and shuffle it
     for (int i = 0; i < data.size(); i++) { 
@@ -137,14 +161,14 @@ struct BarPlot {
     // create button functions
     bubble_sort_id = emp::JSWrap(BubbleSortButton, "BubbleSortButton"); 
     shuffle_id = emp::JSWrap(ShuffleArrayButton, "ShuffleArrayButton");
-
-    playing_id = emp::JSWrap([this]() { playing = false; }, "SetPlayFalse");
+    set_isPlaying_false_id = emp::JSWrap([this]() { isPlaying = false; }, "SetIsPlayingFalse");
   }
 
   ~BarPlot() {
-    // cleanup button functions  
+    // cleanup JSWrap functions  
     emp::JSDelete(bubble_sort_id);  
-    emp::JSDelete(shuffle_id);  
+    emp::JSDelete(shuffle_id); 
+    emp::JSDelete(set_isPlaying_false_id); 
   }
 
 
@@ -153,6 +177,36 @@ struct BarPlot {
   ///////////////////////////////
   /// Initializes the general HTML layout, scales, and axes
   void Init() {
+    // draw initial barplot
+    DrawInitialViz();
+    // create sliders and buttons
+    CreateSlider();
+    CreateButtons();
+     
+    // set div display properties
+    controls_div.SetAttr("style", "display: none;");
+    slider_div.SetAttr("style", "display: flex; justify-content: space-around").SetAttr("class", "mb-1");
+    slider_controls_div.SetAttr("style", "display: flex; justify-content: space-between");
+
+    // add buttons to controls div
+    controls_div << slider_div; 
+    slider_div << bs_slider;
+    slider_div << slider_value_div
+                << emp::web::Element("span", "slider-value-badge").SetAttr("class", "badge badge-primary d-inline-flex align-items-center");   
+    slider_div.Div("slider-value-badge") 
+        << emp::web::Live(current_slider_value);
+
+    controls_div << slider_controls_div;
+    slider_controls_div << bs_inc_down;
+    slider_controls_div << bs_play;
+    slider_controls_div << bs_inc_up;
+
+    // set data to be equal to first index of bs_swaps_vec so it's not sorted 
+    // when user goes to click bubble sort for the first time
+    data = bs_swaps_vec[0];
+  }
+
+  void DrawInitialViz() {
     // we want to sort the data and initially draw the 0th step 
     bubbleSort(data, data.size());
 
@@ -172,7 +226,7 @@ struct BarPlot {
                   .Move(margin["left"], margin["top"]);
 
     // initialize scales
-    xScale.SetDomain(bs_swaps_vec[0])
+    xScale.SetDomain(bs_swaps_vec[0]) 
           .SetRange(0, width);
     // note that this can't be chained above (need to use a curiously recursive template pattern)
     xScale.SetPadding(0.15);
@@ -195,124 +249,142 @@ struct BarPlot {
 
     bars.SelectAll("rect")
         .Data(bs_swaps_vec[0], return_d)
+        // .Data(data, return_d)
         .EnterAppend("rect")
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("width", xScale.GetBandwidth())
         // init y value and height to zero to create animation on page load
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(0); })
         .SetAttr("height", 0)
-        .MakeTransition().SetDuration(2000)
+        .MakeTransition().SetDuration(1750)
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); })
         .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
         .SetAttr("fill", barColor);
+  }
 
-    // create sliders
+  void CreateSlider() { 
+    // create slider
     bs_slider = emp::web::Input([this](std::string curr) { 
+      // add tool tip
+      AddSliderToolTip();
+      
+      // read in current slider value
       int val = emp::from_string<int>(curr);
-      int max_val = emp::from_string<int>(bs_slider.GetMax());
+      current_slider_value = val;
 
-      if(val >= max_val) {
-        EM_ASM({
-          $("#play-button").attr("disabled", true);
-        });
-      }
-      else if(val < max_val && !playing) { 
-        EM_ASM({
-          $("#play-button").attr("disabled", false);
-        });
-      }
-
-      // update viz on change
-      UpdateViz(bs_swaps_vec[val]);
-      printArray(bs_swaps_vec[val], 25);
-
+      // update viz on slider change
+      UpdateViz(bs_swaps_vec[val]); 
+      // redraw slider value
+      // slider_value_div.Redraw();
       std::cout << val << std::endl;
+
     }, "range", "", "bs_slider");
     bs_slider.Min(0);
-    bs_slider.Max(bs_num_swaps);
-    bs_slider.Value(0);
-    bs_slider.SetAttr("style", "width: 85%; cursor: pointer;"); 
+    bs_slider.Max(bs_num_swaps);  
+    bs_slider.SetAttr("style", "width: 92%;");  
+  }
 
-    // create increment buttons for slider
-    // TODO: fix bs_inc button styles
-    // TODO: add current slider value to screen 
-    // TODO: make sure bubble sort isn't hooked up with play button
+  void AddSliderToolTip() {
+    EM_ASM({ 
+      $(function() {
+        $(document).ready(function() {
+          // TODO: fix this from disappearing
+          var el = document.getElementById("bs_slider");
+          el["title"] = "Slide to iterate over the swaps performed from start to finish";
+          el.setAttribute("data-toggle", "tooltip"); 
+          $('[data-toggle="tooltip"]').tooltip({
+            trigger : 'hover'
+          });
+        });
+      });
+    });
+  }
+
+  void CreateButtons() {
+    // add increment down button
     bs_inc_down = emp::web::Button([this]() {
       int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
-      if(current_val != 0) {
+       // if slider isn't at max value, decrement it 
+      if(current_val > 0) {
         bs_slider.Value(current_val - 1);
+        // redraw slider_value_div to show new value
+        slider_value_div.Redraw();
       }
     }, "<i class='fa fa-minus'></i>", "bs-inc-down-button");
     bs_inc_down.SetAttr("class", "btn btn-outline-primary btn-sm");
-    bs_inc_down.SetAttr("style", "width: 7.5%; min-width: 31px, cursor: pointer;");
+    bs_inc_down.SetAttr("style", "width: 31px;");
 
+    // add increment up button
     bs_inc_up = emp::web::Button([this]() {
       int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
       int max_val = emp::from_string<int>(bs_slider.GetMax());
-      if(current_val != max_val) {
+      // if slider isn't at max value, increment it 
+      if(current_val < max_val) {
         bs_slider.Value(current_val + 1);
-      } 
-      
+        // redraw slider_value_div to show new value
+        slider_value_div.Redraw();
+      }   
     }, "<i class='fa fa-plus'></i>", "bs-inc-up-button");
     bs_inc_up.SetAttr("class", "btn btn-outline-primary btn-sm");
-    bs_inc_up.SetAttr("style", "width: 7.5%; min-width: 31px; cursor: pointer;");
+    bs_inc_up.SetAttr("style", "width: 31px;");
 
-
-
-    // custom play event
+    // Custom event for the play button that gets triggered on press
+    // NOTE: this is necessary because of the asychronus nature of JS 
+    // and C++ code will run before JS code even when it seems that it shouldn't (Timeouts are hard!!)
     EM_ASM({
       $(document).on("bs_play_button_press", function(event) {
-
+        // get current slider values
         var curr_val = parseInt($("#bs_slider").attr("value"));
         var max_val = parseInt($("#bs_slider").attr("max"));
         // if not at max slider value
         if(curr_val < max_val) {
+          // increment value by one and manually trigger change
           $("#bs_slider").attr("value", curr_val + 1);
           $("#bs_slider").trigger("change");
 
           setTimeout(function() {
             // trigger play button press again
             $(document).trigger("bs_play_button_press");
-          }, 50); 
+          }, 25); 
         }
-
+        // otherwise the playing is done, so re-enable all buttons (and set isPlaying to false)
         else {
-          emp.SetPlayFalse();
+          emp.SetIsPlayingFalse();
+          $("#play-button").attr("disabled", false);
+          $("#shuffle-button").attr("disabled", false); 
+          $("#bs_slider").attr("disabled", false);
+          $("#bs-inc-up-button").attr("disabled", false); 
+          $("#bs-inc-down-button").attr("disabled", false); 
         }
       });
     });
 
+    // add play button
     bs_play = emp::web::Button([this]() {
-      playing = true;
+      isPlaying = true;
       EM_ASM({
+        // on play, set proper buttons to disabled
         $("#play-button").attr("disabled", true);
+        $("#shuffle-button").attr("disabled", true); 
+        $("#bs_slider").attr("disabled", true); 
+        $("#bs-inc-up-button").attr("disabled", true); 
+        $("#bs-inc-down-button").attr("disabled", true); 
+        // trigger play button action 
         $(document).trigger("bs_play_button_press");
       }); 
     }, "<i class='fa fa-play'></i>", "play-button");
-
     bs_play.SetAttr("class", "btn btn-success btn-sm");
-    bs_play.SetAttr("style", "width: 25%; margin-left: 37.5%; margin-right: 37.5%; cursor: pointer;");
-
-    
-    // add buttons to controls div
-    controls_div << bs_inc_down;
-    controls_div << bs_slider;
-    controls_div << bs_inc_up;
-    controls_div << "<br>" << bs_play;
-    // controls_div << "<br>" << emp::web::Live(emp::from_string<int>(bs_slider.GetCurrValue()));
-
-    // initially set slider display as none 
-    controls_div.SetAttr("style", "display: block; text-align: center; vertical-align: middle;");
-
-    bubbleSortUpdateStats();
-
-    // TODO: disable slider on play
-    // TODO: remove pointers on disable
+    bs_play.SetAttr("style", "width: 35%;");
   }
+
+  
 
   /// A special update that should only be called when the window is getting resized
   /// Keeps everything intact while accounting for change in window size  
   void ResizeUpdate() {
+    // figure out current value of slider and thus the proper data to use
+    int current_val = emp::from_string<int>(bs_slider.GetCurrValue());
+
     // update the SVG if the window has changed size 
     width = GetParentWidth() - margin["right"] - margin["left"];
     height = 450 - margin["top"] - margin["bottom"];
@@ -321,17 +393,17 @@ struct BarPlot {
        .SetAttr("height", height + margin["top"] + margin["bottom"]);
 
     // update the scales and axes based on new window size
-    xScale.SetDomain(data)
+    xScale.SetDomain(bs_swaps_vec[current_val])
           .SetRange(0, width);
 
-    xAxis.Rescale(data, xAxisSel);
+    xAxis.Rescale(bs_swaps_vec[current_val], xAxisSel);
 
     yScale.SetDomain(0, data.size())
           .SetRange(height, 0);
 
     // update the bars based on new window size
     bars.SelectAll("rect")
-        .Data(data, return_d)
+        .Data(bs_swaps_vec[current_val], return_d)
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
         .SetAttr("width", xScale.GetBandwidth())
@@ -340,6 +412,14 @@ struct BarPlot {
 
   /// An update function that should be called when the data is changed (sorted or shuffled)
   void UpdateViz(emp::array<int, 25> newData) {
+    // if we're playing, make the transition faster
+    if(isPlaying) {
+      transitionDuration = 50;
+    }
+    else {
+      transitionDuration = 750;
+    } 
+
     // if data is fully sorted, change barColor
     if(bs_slider.GetCurrValue() == bs_slider.GetMax()) { barColor = "#69b3a2"; }
     else { barColor = "#fc9723"; }
@@ -351,7 +431,7 @@ struct BarPlot {
     // update the bars 
     bars.SelectAll("rect")
         .Data(newData, return_d)
-        .MakeTransition().SetDuration(50) 
+        .MakeTransition().SetDuration(transitionDuration) 
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(d); }) 
         .SetAttr("height", [this](int d, int i, int j) { return height - yScale.ApplyScale<int, int>(d); })
@@ -413,7 +493,7 @@ struct BarPlot {
       }
     }
     // keep track of num swaps for the emp::Live() input
-    // remove 1 since we track initial state as a "step"
+    // remove 1 since we track initial state as a "swap"
     bs_num_swaps = bs_swaps_vec.size() - 1;
   }  
 
@@ -432,20 +512,11 @@ struct BarPlot {
     }
   }
 
-  /// Updates values in the controls div
-  void bubbleSortUpdateControls() {
-    // if array wasn't already sorted, update our slider to reflect the new sorting
-    if(bs_num_swaps != 0) {
-      // update the bubble sort slider
-      bs_slider.Max(bs_num_swaps);
-      bs_slider.Value(0);
-    }
-    // if the array was already sorted
-    else {
-      // then leave our slider at the end
-      // bs_slider.Value(bs_slider.GetMax());
-    }
-
+  /// Updates/redraws values in the controls div
+  void bubbleSortUpdateSlider() {
+    // update our slider to reflect the new sorting 
+    bs_slider.Max(bs_num_swaps);
+    bs_slider.Value(0);
     controls_div.Redraw();
   }
 

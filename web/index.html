@@ -16,6 +16,20 @@
     <link rel="manifest" href="favicon_io/site.webmanifest">
     <!-- This is just for the fancy github button in the info section -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <!-- This does some small custom CSS -->
+    <style>
+        input:disabled,
+        .btn:disabled {
+            cursor: not-allowed;
+            pointer-events: all !important;
+        }
+
+        input:enabled,
+        .btn:enabled {
+            cursor: pointer;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -66,14 +80,14 @@
                             <h4 class="card-header"><i class="fas fa-cog"></i> Controls! </h4>
                             <div id="buttons_div" class="p-2">
                                 <button id="bubble-sort-button" type="button" class="btn btn-primary btn-lg btn-block"
-                                    style="margin-top: 10px; margin-bottom: 10px; cursor: pointer;"
+                                    style="margin-top: 10px; margin-bottom: 10px;"
                                     onclick="emp.BubbleSortButton()">Bubble
                                     Sort</button>
                                 <!-- C++ code comes in here -->
                                 <div id="emp_controls"></div>
                                 <hr>
                                 <button id="shuffle-button" type="button" class="btn btn-dark btn-lg btn-block"
-                                    style="margin-top: 10px; margin-bottom: 10px; cursor: pointer;"
+                                    style="margin-top: 10px; margin-bottom: 10px;"
                                     onclick="emp.ShuffleArrayButton()">Shuffle</button>
                             </div>
                         </div>
@@ -100,10 +114,11 @@
                 <div class="card">
                     <!-- Card heading -->
                     <div class="card-header" id="info-card-header">
-                        <button class="btn btn-lg btn-block btn-light" type="button" data-toggle="collapse"
-                            data-target="#info-card" aria-expanded="true" aria-controls="info-card">
+                        <button id="collapseBtn" class="btn btn-lg btn-block btn-light" type="button"
+                            data-toggle="collapse" data-target="#info-card" aria-expanded="true"
+                            aria-controls="info-card">
                             <h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i>
-                                What is this? </h4>
+                                How was this made? <i class="fas fa-chevron-down" style="float:right;"></i></h4>
                         </button>
                     </div>
                     <!-- Card body -->
@@ -194,18 +209,13 @@
 
             <!-- Set up tool-tips for things other than interaction networks-->
             <script>
-                add_tooltip = function (id, title) {
-                    var el = document.getElementById(id);
-                    el["title"] = title;
-                    el.setAttribute("data-toggle", "tooltip");
-                }
+                // add jQuery to "How was this made?" card
+                $('#info-card').on('hidden.bs.collapse', function () {
+                    $('#collapseBtn').html('<h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i> How was this made ? <i class="fas fa-chevron-down" style="float:right;"></i></h4>');
+                });
 
-                $(function () {
-                    $(document).ready(function () {
-                        // TODO: fix this from disappearing
-                        add_tooltip("bs_slider", "Slide to iterate over the swaps performed from start to finish");
-                        $('[data-toggle="tooltip"]').tooltip();
-                    });
+                $('#info-card').on('shown.bs.collapse', function () {
+                    $('#collapseBtn').html('<h4 style="cursor: pointer;" class="mb-0 text-left"><i class="fas fa-question-circle"></i> How was this made ? <i class="fas fa-chevron-up" style="float:right;"></i></h4>');
                 });
             </script>
 
