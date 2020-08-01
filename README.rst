@@ -4,33 +4,37 @@ sorting-algorithms-d3
 
 
 .. image:: https://img.shields.io/travis/Oliver-BE/sorting-algorithms-d3.svg
-        :target: https://travis-ci.com/Oliver-BE/sorting-algorithms-d3
+        :target: https://travis-ci.com/Oliver-BE/sorting-algorithms-d3 
 
-.. image:: https://readthedocs.org/projects/sorting-algorithms-d3/badge/?version=latest
-        :target: https://sorting-algorithms-d3.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+This web app is written entirely in C++ and utilizes the Empirical_ D3-wrapper to create an interactive visualization of different sorting algorithms.
+This project is meant to serve as a demo for how the new D3-wrapper can be used with Empirical to create powerful web apps.
 
-
-This project utilizes the Empirical D3 wrapper to create visualizations of different sorting algorithms
+Along with @elizabethcarney, @amlalejini, and @emilydolson I worked on overhauling Empirical's web visualization support for use in the next version of Avida-ED_.
+For more information on what I did see my blogpost here_.
 
 Check out the live in-browser web app at `https://Oliver-BE.github.io/sorting-algorithms-d3`_.
-
-
-* Free software: MIT license
-* Documentation: https://sorting-algorithms-d3.readthedocs.io.
 
 
 Features
 --------
 
-* TODO
+* A slider to iterate through individual steps of a sorting algorithm
+* A play button to speed through the remaining steps of a sorting algorithm 
+* A shuffle button to randomize the data
+* A card containing live statistics pertaining to the number of swaps a sorting algorithm has taken  
+* Cool D3 transitions!
 
 Credits
 -------
 
 This package was created with Cookiecutter_ and the `devosoft/cookiecutter-empirical-project`_ project template.
 
-
+.. _Empirical: https://github.com/devosoft/Empirical
+.. _Avida-ED: https://avida-ed.msu.edu/
+.. _here: https://mmore500.com/waves/blog.html
 .. _`https://Oliver-BE.github.io/sorting-algorithms-d3`: https://Oliver-BE.github.io/sorting-algorithms-d3
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`devosoft/cookiecutter-empirical-project`: https://github.com/devosoft/cookiecutter-empirical-project
+
+*This software was written by Oliver Baldwin Edwards and uses the MIT license*
+
