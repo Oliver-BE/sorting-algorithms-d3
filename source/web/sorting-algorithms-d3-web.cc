@@ -30,9 +30,6 @@
 // TODO: add more sorting algorithms (if code structure becomes better, this should become easier)
 // TODO: add bar plot that takes the num of swaps for each sorting alg and generates avg num swaps taken 
 
-// TODO: fix colors
-// TODO: make play work after manually changing slider (only works after using plus or minus buttons)
-
 // set up divs
 emp::web::Document stats_div("emp_stats");
 emp::web::Document controls_div("emp_controls");
@@ -71,7 +68,11 @@ struct BarPlot {
       [this]() { 
         // show slider and stats
         controls_div.SetAttr("style", "display: block;");
-        stats_div.SetAttr("style", "display: block;"); 
+        stats_div.SetAttr("style", "display: block;");
+        
+        // TODO: fix the tool tip (it sticks on slider click/change)
+        // AddSliderToolTip();
+
         // sort data / update stats and controls
         bubbleSort(data, data.size());
         bubbleSortUpdateStats();
@@ -90,8 +91,8 @@ struct BarPlot {
         controls_div.SetAttr("style", "display: none;");
         // shuffle the data
         ShuffleArray(data);
-        // barColor = "#fc9723";
-
+        // reset slider to 0
+        bs_slider.Value(0);
         // update the barchart based on the new data
         UpdateViz(data);
 
@@ -192,13 +193,14 @@ struct BarPlot {
     slider_controls_div << bs_inc_up;
 
     // set data to be equal to first index of bs_swaps_vec so it's not sorted 
-    // when user goes to click bubble sort for the first time
+    // when the user goes to click bubble sort for the first time (this will mess up the slider)
     data = bs_swaps_vec[0];
   }
 
   void DrawInitialViz() {
     // we want to sort the data and initially draw the 0th step 
     bubbleSort(data, data.size());
+    emp::array<int, 25> newData = bs_swaps_vec[0];
 
     // init height and width (based on parent div width) 
     width = 725;
@@ -214,12 +216,12 @@ struct BarPlot {
                   .SetAttr("id", "barplot");  
 
     // initialize scales
-    xScale.SetDomain(bs_swaps_vec[0]) 
+    xScale.SetDomain(newData) 
           .SetRange(margin["left"], width - margin["right"]); 
     // note that this can't be chained above (need to use a curiously recursive template pattern)
     xScale.SetPadding(0.15);
 
-    yScale.SetDomain(0, data.size())
+    yScale.SetDomain(0, newData.size())
           .SetRange(height - margin["bottom"], margin["top"]); 
 
     // initialize and draw x axis
@@ -236,12 +238,11 @@ struct BarPlot {
                   .SetAttr("id", "bars"); 
 
     bars.SelectAll("rect")
-        .Data(bs_swaps_vec[0], return_d)
-        // .Data(data, return_d)
+        .Data(newData, return_d)
         .EnterAppend("rect")
         .SetAttr("x", [this](int d, int i, int j) { return xScale.ApplyScale<int, int>(d); })
         .SetAttr("width", xScale.GetBandwidth())
-        // init y value and height to zero to create animation on page load
+        // initialize the y value and height to zero to create a transition on page load
         .SetAttr("y", [this](int d, int i, int j) { return yScale.ApplyScale<int, int>(0); })
         .SetAttr("height", 0)
         .MakeTransition().SetDuration(1750)
@@ -252,40 +253,21 @@ struct BarPlot {
 
   void CreateSlider() { 
     // create slider
-    bs_slider = emp::web::Input([this](std::string curr) { 
-      // add tool tip
-      AddSliderToolTip();
-
-      // read in current slider value
+    bs_slider = emp::web::Input([this](std::string curr) {  
+      // read in current slider value and update value 
       int val = emp::from_string<int>(curr);
       current_slider_value = val;
+      bs_slider.Value(val);
+
       // redraw slider value
       slider_value_div.Redraw();
 
       // update viz on slider change
       UpdateViz(bs_swaps_vec[val]); 
-      std::cout << val << std::endl;
-
     }, "range", "", "bs_slider");
     bs_slider.Min(0);
     bs_slider.Max(bs_num_swaps);  
     bs_slider.SetAttr("style", "width: 92%;");  
-  }
-
-  void AddSliderToolTip() {
-    EM_ASM({ 
-      $(function() {
-        $(document).ready(function() {
-          // TODO: fix this from disappearing
-          var el = document.getElementById("bs_slider");
-          el["title"] = "Slide to iterate over the swaps performed from start to finish";
-          el.setAttribute("data-toggle", "tooltip"); 
-          $('[data-toggle="tooltip"]').tooltip({
-            trigger : 'hover'
-          });
-        });
-      });
-    });
   }
 
   void CreateButtons() {
@@ -325,12 +307,12 @@ struct BarPlot {
     // NOTE: this is necessary because of the asychronus nature of JS 
     // and C++ code will run before JS code even when it seems that it shouldn't (Timeouts are hard!!)
     EM_ASM({
-      $(document).on("bs_play_button_press", function(event) {
+      $(document).on("bs_play_button_press", function(event) { 
         // get current slider values
         var curr_val = parseInt($("#bs_slider").attr("value"));
         var max_val = parseInt($("#bs_slider").attr("max"));
         // if not at max slider value
-        if(curr_val < max_val) {
+        if(curr_val < max_val) { 
           // increment value by one and manually trigger change
           $("#bs_slider").attr("value", curr_val + 1);
           $("#bs_slider").trigger("change");
@@ -345,7 +327,6 @@ struct BarPlot {
           emp.SetIsPlayingFalse();
           $("#play-button").attr("disabled", false);
           $("#shuffle-button").attr("disabled", false); 
-          $("#bs_slider").attr("disabled", false);
           $("#bs-inc-up-button").attr("disabled", false); 
           $("#bs-inc-down-button").attr("disabled", false); 
         }
@@ -359,7 +340,6 @@ struct BarPlot {
         // on play, set proper buttons to disabled
         $("#play-button").attr("disabled", true);
         $("#shuffle-button").attr("disabled", true); 
-        $("#bs_slider").attr("disabled", true); 
         $("#bs-inc-up-button").attr("disabled", true); 
         $("#bs-inc-down-button").attr("disabled", true); 
         // trigger play button action 
@@ -402,6 +382,45 @@ struct BarPlot {
   ///////////////////////////////
   //     HELPER FUNCTIONS      //
   ///////////////////////////////
+  /// Adds a tooltip to the slider
+  void AddSliderToolTip() {
+    EM_ASM({ 
+      $(function() {
+        $(document).ready(function() {
+          var el = document.getElementById("bs_slider");
+          el["title"] = "Slide to iterate over the swaps performed from start to finish";
+          el.setAttribute("data-toggle", "tooltip"); 
+          $('[data-toggle="tooltip"]').tooltip({ 
+            trigger : 'hover'
+          }); 
+        });
+      });
+    });
+  }
+
+  /// Updates values in the stats div
+  void bubbleSortUpdateStats() {
+    // if the array wasn't already sorted, update our stats
+    if(bs_num_swaps != 0) {
+      // increment how many times it's been sorted
+      bs_num_times_sorted++;
+      // update total number of swaps taken
+      total_bs_num_swaps = total_bs_num_swaps + bs_num_swaps;
+      // update avg num of swaps taken (total / number of times sorted)
+      avg_bs_num_swaps = total_bs_num_swaps / bs_num_times_sorted; 
+      // redraw stats div
+      stats_div.Redraw();
+    }
+  }
+
+  /// Updates/redraws values in the controls div
+  void bubbleSortUpdateSlider() {
+    // update our slider to reflect the new sorting 
+    bs_slider.Max(bs_num_swaps);
+    bs_slider.Value(0);
+    controls_div.Redraw();
+  } 
+
   /// Randomly shuffles an array
   void ShuffleArray(emp::array<int, 25> & arr) {
     // obtain a time-based seed:
@@ -451,32 +470,6 @@ struct BarPlot {
     // remove 1 since we track initial state as a "swap"
     bs_num_swaps = bs_swaps_vec.size() - 1;
   }  
-
-  /// Updates values in the stats div
-  void bubbleSortUpdateStats() {
-    // if the array wasn't already sorted, update our stats
-    if(bs_num_swaps != 0) {
-      // increment how many times it's been sorted
-      bs_num_times_sorted++;
-      // update total number of swaps taken
-      total_bs_num_swaps = total_bs_num_swaps + bs_num_swaps;
-      // update avg num of swaps taken (total / number of times sorted)
-      avg_bs_num_swaps = total_bs_num_swaps / bs_num_times_sorted; 
-      // redraw stats div
-      stats_div.Redraw();
-    }
-  }
-
-  /// Updates/redraws values in the controls div
-  void bubbleSortUpdateSlider() {
-    // update our slider to reflect the new sorting 
-    bs_slider.Max(bs_num_swaps);
-    bs_slider.Value(0);
-    controls_div.Redraw();
-  }
-
-  // Other sorting alg
-  /// Implements other sorting alg
 };
 
 BarPlot barChart{};
