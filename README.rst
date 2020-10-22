@@ -36,7 +36,7 @@ This package was created with Cookiecutter_ and the `devosoft/cookiecutter-empir
 .. _Avida-ED: https://avida-ed.msu.edu/
 .. _`@elizabethcarney`: https://github.com/elizabethcarney
 .. _`@amlalejini`: https://github.com/amlalejini
-.. _`@emilydolson`: https://github.com/emilydolson_
+.. _`@emilydolson`: https://github.com/emilydolson
 .. _`this blog post I wrote`: https://mmore500.com/waves/blog/d3-sorting.html
 .. _`https://Oliver-BE.github.io/sorting-algorithms-d3`: https://Oliver-BE.github.io/sorting-algorithms-d3
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
