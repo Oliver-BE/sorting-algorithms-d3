@@ -10,7 +10,7 @@ install:
 - sudo apt-get install -qq g++-8
 - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
 - git clone https://github.com/emscripten-core/emsdk.git && cd emsdk &&
-  ./emsdk install sdk-1.40.1  && ./emsdk activate sdk-1.40.1 && . ./emsdk_env.sh && cd ..
+  ./emsdk install sdk-1.38.48  && ./emsdk activate sdk-1.38.48 && . ./emsdk_env.sh && cd ..
 - git submodule init
 - git submodule update
 script:
