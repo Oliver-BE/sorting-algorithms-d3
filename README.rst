@@ -3,7 +3,7 @@ sorting-algorithms-d3
 =====================
 
 
-.. image:: https://img.shields.io/travis/Oliver-BE/sorting-algorithms-d3.svg
+.. image:: https://travis-ci.com/Oliver-BE/sorting-algorithms-d3.svg?branch=master
         :target: https://travis-ci.com/Oliver-BE/sorting-algorithms-d3 
 
 This web app is written entirely in C++ and utilizes the Empirical_ D3-wrapper to create an interactive visualization of different sorting algorithms.
